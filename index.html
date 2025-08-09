@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Blooming Pomodoro Garden</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@300;400;600;700&display=swap');
+
+        body {
+            font-family: 'Comfortaa', cursive;
+            background: linear-gradient(135deg, #fef7ff 0%, #fce7f3 50%, #fbcfe8 100%);
+        }
+
+        .flower-stage-0 { opacity: 0; }
+        .flower-stage-1 { opacity: 1; }
+        .flower-stage-2 { opacity: 1; transform: scale(1.1); }
+        .flower-stage-3 { opacity: 1; transform: scale(1.2); }
+        .flower-stage-4 { opacity: 1; transform: scale(1.3); }
+        .flower-stage-5 { opacity: 1; transform: scale(1.4); }
+
+        .sparkle { animation: sparkle 1.5s ease-in-out infinite alternate; }
+        @keyframes sparkle {
+            0% { opacity: 0.4; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1.2); }
+        }
+
+        .petal { animation: gentle-sway 3s ease-in-out infinite alternate; }
+        @keyframes gentle-sway {
+            0% { transform: rotate(-2deg); }
+            100% { transform: rotate(2deg); }
+        }
+
+        .timer-glow { box-shadow: 0 0 30px rgba(236, 72, 153, 0.3); }
+        .completed-milestone { animation: milestone-celebration 0.8s ease-out; }
+        @keyframes milestone-celebration {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); background-color: #f9a8d4; }
+            100% { transform: scale(1); }
+        }
+
+        .floating-hearts { position: absolute; animation: float-up 2s ease-out forwards; }
+        @keyframes float-up { 0% { opacity: 1; transform: translateY(0px); } 100% { opacity: 0; transform: translateY(-100px); } }
+    </style>
+</head>
+<body class="min-h-screen p-4">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-pink-600 mb-2">🌸 Blooming Pomodoro Garden 🌸</h1>
+            <p class="text-pink-400 text-lg">Watch your flower bloom as you complete your study sessions!</p>
+        </div>
+
+        <!-- User Setup -->
+        <div id="setupCard" class="bg-white/80 backdrop-blur-sm rounded-3xl p-8 mb-8 shadow-xl border border-pink-100">
+            <div class="text-center mb-6">
+                <h2 class="text-2xl font-semibold text-pink-600 mb-4">Welcome to your garden! 🌱</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-pink-500 font-medium mb-2">What's your name, lovely?</label>
+                        <input id="userName" type="text" placeholder="Enter your beautiful name..." 
+                               class="w-full max-w-sm mx-auto px-4 py-3 rounded-full border-2 border-pink-200 focus:border-pink-400 focus:outline-none text-center bg-pink-50/50">
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-pink-500 font-medium mb-2">Timer Duration (minutes)</label>
+                            <div class="flex gap-2">
+                                <select id="timerPreset" class="px-4 py-3 rounded-full border-2 border-pink-200 focus:border-pink-400 focus:outline-none bg-pink-50/50 text-pink-600">
+                                    <option value="5">5 min - Quick Focus ⚡</option>
+                                    <option value="15">15 min - Short Burst 🌱</option>
+                                    <option value="25" selected>25 min - Classic 🌸</option>
+                                    <option value="30">30 min - Extended 🌺</option>
+                                    <option value="45">45 min - Deep Work 🌻</option>
+                                    <option value="custom">Custom ⚙️</option>
+                                </select>
+                                <input id="customTimer" type="number" min="1" max="120" placeholder="Custom" 
+                                       class="hidden w-20 px-3 py-3 rounded-full border-2 border-pink-200 focus:border-pink-400 focus:outline-none bg-pink-50/50 text-pink-600 text-center">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-pink-500 font-medium mb-2">Sessions to bloom your flower</label>
+                            <select id="milestoneCount" class="px-6 py-3 rounded-full border-2 border-pink-200 focus:border-pink-400 focus:outline-none bg-pink-50/50 text-pink-600">
+                                <option value="3">3 sessions 🌸</option>
+                                <option value="5" selected>5 sessions 🌺</option>
+                                <option value="8">8 sessions 🌻</option>
+                                <option value="10">10 sessions 🌹</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button id="startGarden" class="bg-gradient-to-r from-pink-400 to-rose-400 text-white px-8 py-3 rounded-full hover:from-pink-500 hover:to-rose-500 transition-all shadow-lg font-semibold">
+                        Start My Garden! 🌱
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Garden -->
+        <div id="gardenCard" class="hidden bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-xl border border-pink-100">
+            <!-- User Greeting -->
+            <div class="text-center mb-6">
+                <h2 id="userGreeting" class="text-2xl font-semibold text-pink-600 mb-2"></h2>
+                <p class="text-pink-400">Focus and watch your flower bloom! 🌸</p>
+            </div>
+
+            <!-- Progress Section -->
+            <div class="mb-8">
+                <div class="flex justify-between items-center mb-4">
+                    <span class="text-pink-500 font-medium">Garden Progress</span>
+                    <span id="progressText" class="text-pink-600 font-semibold">0/1 blooms<\/span>
+                </div>
+                <div class="bg-pink-100 rounded-full h-4 overflow-hidden">
+                    <div id="progressBar" class="bg-gradient-to-r from-pink-400 to-rose-400 h-full transition-all duration-500 rounded-full" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Timer Section -->
+            <div class="text-center mb-8">
+                <div id="timerDisplay" class="text-6xl font-bold text-pink-600 mb-6 timer-glow bg-white/50 rounded-full px-8 py-6 inline-block">
+                    25:00
+                </div>
+                <div class="space-x-4">
+                    <button id="startTimer" class="bg-gradient-to-r from-emerald-400 to-teal-400 text-white px-8 py-3 rounded-full hover:from-emerald-500 hover:to-teal-500 transition-all shadow-lg font-semibold">
+                        🌱 Start Focus
+                    </button>
+                    <button id="pauseTimer" class="bg-gradient-to-r from-amber-400 to-orange-400 text-white px-8 py-3 rounded-full hover:from-amber-500 hover:to-orange-500 transition-all shadow-lg font-semibold hidden">
+                        ⏸️ Pause
+                    </button>
+                    <button id="resetTimer" class="bg-gradient-to-r from-purple-400 to-pink-400 text-white px-8 py-3 rounded-full hover:from-purple-500 hover:to-pink-500 transition-all shadow-lg font-semibold">
+                        🔄 Reset
+                    </button>
+                </div>
+            </div>
+
+            <!-- Flower Garden Display -->
+            <div class="text-center mb-8">
+                <div class="bg-gradient-to-b from-sky-200 to-green-200 rounded-3xl p-8 relative overflow-hidden min-h-80">
+                    <!-- Background Elements -->
+                    <div class="absolute inset-0">
+                        <div class="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-green-300 to-green-200 rounded-b-3xl"></div>
+                        <!-- Clouds -->
+                        <div class="absolute top-4 left-8 text-4xl opacity-70">☁️</div>
+                        <div class="absolute top-8 right-12 text-3xl opacity-60">☁️</div>
+                        <!-- Sun -->
+                        <div class="absolute top-4 right-4 text-5xl sparkle">☀️</div>
+                    </div>
+
+                    <!-- Flower Container -->
+                    <div class="relative z-10 flex justify-center items-end h-64">
+                        <!-- Stem (hidden initially) -->
+                        <div class="w-2 bg-green-500 rounded-full transition-all duration-1000 opacity-0" style="height: 60px;" id="flowerStem"></div>
+                        
+                        <!-- Flower Stages -->
+                        <div class="absolute bottom-4 text-8xl transition-all duration-1000 flower-stage-1 petal" id="flowerBud">🌱</div>
+                        <div class="absolute bottom-14 text-8xl transition-all duration-1000 flower-stage-0 petal" id="flowerSmall">🌸</div>
+                        <div class="absolute bottom-14 text-8xl transition-all duration-1000 flower-stage-0 petal" id="flowerMedium">🌺</div>
+                        <div class="absolute bottom-14 text-8xl transition-all duration-1000 flower-stage-0 petal" id="flowerLarge">🌻</div>
+                        <div class="absolute bottom-14 text-8xl transition-all duration-1000 flower-stage-0 petal" id="flowerFull">🌹</div>
+                    </div>
+
+                    <!-- Milestone Markers -->
+                    <div class="absolute bottom-4 left-4 right-4">
+                        <div id="milestoneMarkers" class="flex justify-between"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="grid grid-cols-3 gap-4 text-center">
+                <div class="bg-pink-100 rounded-2xl p-4">
+                    <div id="totalSessions" class="text-2xl font-bold text-pink-600">0</div>
+                    <div class="text-pink-500 text-sm">Total Sessions</div>
+                </div>
+                <div class="bg-purple-100 rounded-2xl p-4">
+                    <div id="totalMinutes" class="text-2xl font-bold text-purple-600">0</div>
+                    <div class="text-purple-500 text-sm">Minutes Focused</div>
+                </div>
+                <div class="bg-rose-100 rounded-2xl p-4">
+                    <div id="flowersGrown" class="text-2xl font-bold text-rose-600">0</div>
+                    <div class="text-rose-500 text-sm">Flowers Grown</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class BloomingPomodoro {
+            constructor() {
+                this.userName = '';
+                this.milestoneTarget = 1; // one plant per session
+                this.timerDuration = 25; // minutes
+                this.currentProgress = 0;
+                this.totalSessions = 0;
+                this.totalMinutes = 0;
+                this.flowersGrown = 0;
+                this.isRunning = false;
+                this.isCelebrating = false; // lock UI during celebration/reset
+                this.timeRemaining = this.timerDuration * 60; // seconds
+                this.timer = null;
+
+                this.initializeEventListeners();
+            }
+
+            initializeEventListeners() {
+                document.getElementById('startGarden').addEventListener('click', () => this.setupGarden());
+                document.getElementById('startTimer').addEventListener('click', () => this.startTimer());
+                document.getElementById('pauseTimer').addEventListener('click', () => this.pauseTimer());
+                document.getElementById('resetTimer').addEventListener('click', () => this.resetTimer());
+
+                // Timer preset change handler
+                document.getElementById('timerPreset').addEventListener('change', (e) => {
+                    const customInput = document.getElementById('customTimer');
+                    if (e.target.value === 'custom') {
+                        customInput.classList.remove('hidden');
+                        customInput.focus();
+                    } else {
+                        customInput.classList.add('hidden');
+                        this.timerDuration = parseInt(e.target.value);
+                        this.timeRemaining = this.timerDuration * 60;
+                        this.updateTimerDisplay();
+                    }
+                });
+
+                // Custom timer input handler
+                document.getElementById('customTimer').addEventListener('input', (e) => {
+                    const value = parseInt(e.target.value);
+                    if (value && value > 0 && value <= 120) {
+                        this.timerDuration = value;
+                        this.timeRemaining = this.timerDuration * 60;
+                        this.updateTimerDisplay();
+                    }
+                });
+
+                // Enter key support for name input
+                document.getElementById('userName').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.setupGarden();
+                });
+            }
+
+            setupGarden() {
+                const nameInput = document.getElementById('userName');
+                const timerPreset = document.getElementById('timerPreset');
+                const customTimer = document.getElementById('customTimer');
+
+                this.userName = nameInput.value.trim() || 'Beautiful Soul';
+                this.milestoneTarget = 1; // keep one plant per session
+
+                // Set timer duration
+                if (timerPreset.value === 'custom') {
+                    this.timerDuration = parseInt(customTimer.value) || 25;
+                } else {
+                    this.timerDuration = parseInt(timerPreset.value);
+                }
+                this.timeRemaining = this.timerDuration * 60;
+
+                document.getElementById('setupCard').classList.add('hidden');
+                document.getElementById('gardenCard').classList.remove('hidden');
+
+                document.getElementById('userGreeting').textContent = `${this.userName}'s Blooming Garden`;
+                document.getElementById('progressText').textContent = `0/${this.milestoneTarget} blooms`;
+
+                this.createMilestoneMarkers();
+                this.resetFlowerToSeedling();
+                this.updateTimerDisplay();
+                this.updateStats();
+            }
+
+            createMilestoneMarkers() {
+                const container = document.getElementById('milestoneMarkers');
+                container.innerHTML = '';
+
+                for (let i = 0; i < this.milestoneTarget; i++) {
+                    const marker = document.createElement('div');
+                    marker.className = 'w-8 h-8 rounded-full border-2 border-pink-300 bg-white/50 flex items-center justify-center text-sm';
+                    marker.id = `milestone-${i}`;
+                    marker.textContent = i + 1;
+                    container.appendChild(marker);
+                }
+            }
+
+            startTimer() {
+                if (this.isCelebrating) {
+                    alert('✨ Give your flower a moment to reset before the next focus!');
+                    return;
+                }
+                if (!this.isRunning) {
+                    this.isRunning = true;
+                    document.getElementById('startTimer').classList.add('hidden');
+                    document.getElementById('pauseTimer').classList.remove('hidden');
+
+                    this.timer = setInterval(() => {
+                        this.timeRemaining--;
+                        this.updateTimerDisplay();
+
+                        if (this.timeRemaining <= 0) {
+                            this.completeSession();
+                        }
+                    }, 1000);
+                }
+            }
+
+            pauseTimer() {
+                this.isRunning = false;
+                clearInterval(this.timer);
+                document.getElementById('startTimer').classList.remove('hidden');
+                document.getElementById('pauseTimer').classList.add('hidden');
+            }
+
+            resetTimer() {
+                this.isRunning = false;
+                clearInterval(this.timer);
+                this.timeRemaining = this.timerDuration * 60;
+                this.updateTimerDisplay();
+                document.getElementById('startTimer').classList.remove('hidden');
+                document.getElementById('pauseTimer').classList.add('hidden');
+            }
+
+            updateTimerDisplay() {
+                const minutes = Math.floor(this.timeRemaining / 60);
+                const seconds = this.timeRemaining % 60;
+                const display = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                document.getElementById('timerDisplay').textContent = display;
+            }
+
+            completeSession() {
+                this.pauseTimer();
+                this.currentProgress++;
+                this.totalSessions++;
+                this.totalMinutes += this.timerDuration;
+
+                // Update progress bar
+                const progressPercentage = (this.currentProgress / this.milestoneTarget) * 100;
+                document.getElementById('progressBar').style.width = progressPercentage + '%';
+                document.getElementById('progressText').textContent = `${this.currentProgress}/${this.milestoneTarget} blooms`;
+
+                // Update milestone marker
+                const currentMarker = document.getElementById(`milestone-${this.currentProgress - 1}`);
+                if (currentMarker) {
+                    currentMarker.className = 'w-8 h-8 rounded-full bg-gradient-to-r from-pink-400 to-rose-400 text-white flex items-center justify-center text-sm completed-milestone';
+                    currentMarker.textContent = '✓';
+                }
+
+                if (this.currentProgress >= this.milestoneTarget) {
+                    this.completeMilestone();
+                } else {
+                    this.updateFlowerStage();
+                    this.showCelebration();
+                }
+
+                this.updateStats();
+                this.resetTimer();
+            }
+
+            updateFlowerStage() {
+                const stem = document.getElementById('flowerStem');
+                const stages = ['flowerBud', 'flowerSmall', 'flowerMedium', 'flowerLarge', 'flowerFull'];
+
+                // Hide all stages first
+                stages.forEach((id) => {
+                    const el = document.getElementById(id);
+                    el.className = `absolute bottom-14 text-8xl transition-all duration-1000 flower-stage-0 petal`;
+                });
+
+                if (this.currentProgress === 0) {
+                    // Seedling only
+                    document.getElementById('flowerBud').className = `absolute bottom-4 text-8xl transition-all duration-1000 flower-stage-1 petal`;
+                    stem.style.opacity = '0';
+                    stem.style.height = '60px';
+                    return;
+                }
+
+                // One session => full bloom
+                stem.style.opacity = '1';
+                stem.style.height = '100px';
+                document.getElementById('flowerFull').className = `absolute bottom-14 text-8xl transition-all duration-1000 flower-stage-1 petal`;
+            }
+
+            resetFlowerToSeedling() {
+                const stem = document.getElementById('flowerStem');
+                const stages = ['flowerBud', 'flowerSmall', 'flowerMedium', 'flowerLarge', 'flowerFull'];
+
+                stages.forEach((stage) => {
+                    const element = document.getElementById(stage);
+                    element.className = `absolute bottom-14 text-8xl transition-all duration-1000 flower-stage-0 petal`;
+                });
+
+                document.getElementById('flowerBud').className = `absolute bottom-4 text-8xl transition-all duration-1000 flower-stage-1 petal`;
+                stem.style.opacity = '0';
+                stem.style.height = '60px';
+            }
+
+            completeMilestone() {
+                // Count the flower immediately so the stat updates right away
+                this.flowersGrown++;
+                this.updateStats();
+
+                // Show final bloom & celebration
+                this.updateFlowerStage();
+
+                // Lock controls during reset window
+                this.isCelebrating = true;
+                const startBtn = document.getElementById('startTimer');
+                const pauseBtn = document.getElementById('pauseTimer');
+                startBtn.disabled = true;
+                pauseBtn.disabled = true;
+                startBtn.classList.add('opacity-50', 'pointer-events-none');
+
+                this.showMilestoneCelebration();
+
+                // Reset to a new plant after a short delay
+                setTimeout(() => {
+                    this.currentProgress = 0;
+
+                    // Reset progress UI
+                    document.getElementById('progressBar').style.width = '0%';
+                    document.getElementById('progressText').textContent = `0/${this.milestoneTarget} blooms`;
+                    this.createMilestoneMarkers();
+
+                    // Reset flower visuals
+                    this.resetFlowerToSeedling();
+
+                    // Re-enable controls
+                    this.isCelebrating = false;
+                    startBtn.disabled = false;
+                    pauseBtn.disabled = false;
+                    startBtn.classList.remove('opacity-50', 'pointer-events-none');
+
+                    // Ensure stats are correct
+                    this.updateStats();
+                }, 1200);
+            }
+
+            showCelebration() {
+                for (let i = 0; i < 3; i++) {
+                    setTimeout(() => {
+                        const heart = document.createElement('div');
+                        heart.textContent = '💖';
+                        heart.className = 'floating-hearts text-4xl';
+                        heart.style.left = Math.random() * window.innerWidth + 'px';
+                        heart.style.top = window.innerHeight + 'px';
+                        document.body.appendChild(heart);
+                        setTimeout(() => { heart.remove(); }, 2000);
+                    }, i * 200);
+                }
+            }
+
+            showMilestoneCelebration() {
+                const messages = [
+                    '🎉 Beautiful work, ' + this.userName + '! Your flower has fully bloomed!',
+                    '🌸 Amazing focus! Time to plant a new flower!',
+                    '✨ Incredible dedication! Your garden is growing beautifully!'
+                ];
+                alert(messages[Math.floor(Math.random() * messages.length)]);
+
+                for (let i = 0; i < 10; i++) {
+                    setTimeout(() => {
+                        const celebration = document.createElement('div');
+                        celebration.textContent = ['🌸', '🌺', '🌻', '🌹', '💖'][Math.floor(Math.random() * 5)];
+                        celebration.className = 'floating-hearts text-5xl';
+                        celebration.style.left = Math.random() * window.innerWidth + 'px';
+                        celebration.style.top = window.innerHeight + 'px';
+                        document.body.appendChild(celebration);
+                        setTimeout(() => { celebration.remove(); }, 2000);
+                    }, i * 100);
+                }
+            }
+
+            updateStats() {
+                document.getElementById('totalSessions').textContent = this.totalSessions;
+                document.getElementById('totalMinutes').textContent = this.totalMinutes;
+                document.getElementById('flowersGrown').textContent = this.flowersGrown;
+            }
+        }
+
+        // Initialize the app
+        const app = new BloomingPomodoro();
+    </script>
+</body>
+</html>
